@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { margin: 2cm 2.2cm; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10.5pt;
+         line-height: 1.65; color: #1a1a2e; }
+  h1   { font-size: 20pt; color: #1d6fa8; border-bottom: 3px solid #1d6fa8;
+         padding-bottom: 8px; margin-top: 0; }
+  h2   { font-size: 14pt; color: #1d6fa8; border-bottom: 1px solid #c0d8ed;
+         padding-bottom: 4px; margin-top: 30px; }
+  h3   { font-size: 12pt; color: #2c5f8a; margin-top: 20px; }
+  h4   { font-size: 10.5pt; color: #3a7ab8; margin-top: 14px; }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 9.5pt; }
+  th   { background: #1d6fa8; color: white; padding: 6px 9px; text-align: left; }
+  td   { padding: 5px 9px; border-bottom: 1px solid #e0eaf2; }
+  tr:nth-child(even) td { background: #f5f9fd; }
+  code, pre { background: #f0f4f8; border-radius: 3px;
+              font-family: 'Courier New', monospace; font-size: 9pt; }
+  pre  { padding: 10px 14px; border-left: 3px solid #1d6fa8; white-space: pre-wrap; }
+  code { padding: 1px 4px; }
+  hr   { border: none; border-top: 1px solid #c0d8ed; margin: 20px 0; }
+  a    { color: #1d6fa8; text-decoration: none; }
+  p    { margin: 7px 0; }
+</style>
+</head>
+<body><h1 id="case-study-report-data-analyst-2025">Case Study Report — Data Analyst 2025</h1>
+<h2 id="talent-match-intelligence-system">Talent Match Intelligence System</h2>
+<hr />
+<p><strong>Candidate:</strong> Ninditya S.N.A.
+<strong>Email:</strong> ninditya.sna025@gmail.com
+<strong>Repository:</strong> https://github.com/ninditya/talent-match-intelligence
+<strong>Live App:</strong> https://ninditya-talent-match-intelligence.streamlit.app/</p>
+<hr />
+<h2 id="executive-summary">Executive Summary</h2>
+<p>Company X faces a critical challenge in succession planning: how to systematically identify which employees most closely match the profile of proven top performers. This project builds a <strong>Talent Match Intelligence</strong> system that answers that question at scale.</p>
+<p><strong>What was built:</strong></p>
+<ol>
+<li>
+<p><strong>Success Pattern Discovery</strong> — a data-driven analysis of 2,010 employees across 5 years of performance data, identifying what truly differentiates Rating-5 employees across competencies, psychometrics, behavioral assessments, and organizational context.</p>
+</li>
+<li>
+<p><strong>SQL Matching Algorithm</strong> — a 17-CTE parameterized query that computes how closely any employee matches a manager-defined benchmark profile, producing interpretable TV → TGV → Final Match Rate scores.</p>
+</li>
+<li>
+<p><strong>AI-Powered Talent App</strong> — a publicly deployed Streamlit dashboard that accepts runtime vacancy inputs, computes match scores dynamically, generates LLM-produced job profiles via OpenRouter, and visualizes insights through interactive charts.</p>
+</li>
+</ol>
+<p><strong>Key outcome:</strong> Any manager can now define a vacancy, select 1–3 top performers as benchmark, and instantly receive a ranked list of 2,010 employees scored against that profile — with full transparency into which competencies, traits, and work preferences drive the match.</p>
+<hr />
+<h2 id="section-1-success-pattern-discovery">Section 1 — Success Pattern Discovery</h2>
+<h3 id="11-dataset-overview">1.1 Dataset Overview</h3>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Rows</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>employees</td>
+<td>2,010</td>
+<td>Core entity</td>
+</tr>
+<tr>
+<td>performance_yearly</td>
+<td>10,050</td>
+<td>5 years (2021–2025)</td>
+</tr>
+<tr>
+<td>profiles_psych</td>
+<td>2,010</td>
+<td>One row per employee</td>
+</tr>
+<tr>
+<td>papi_scores</td>
+<td>40,200</td>
+<td>20 scales × 2,010 employees</td>
+</tr>
+<tr>
+<td>competencies_yearly</td>
+<td>100,500</td>
+<td>10 pillars × 5 years × 2,010</td>
+</tr>
+<tr>
+<td>strengths</td>
+<td>28,140</td>
+<td>14 CliftonStrengths themes per employee</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Data quality issues found:</strong>
+- Invalid ratings: 15 records with rating=0, 13 with rating=6, 7 with rating=99 → excluded from all analysis
+- Null psychometric data: IQ missing for 456 employees (22.7%), GTQ missing for 332 (16.5%) — these are department-level assessment gaps, not data errors
+- Invalid MBTI entries: some contained typos (e.g., "INFTJ") → cleaned to 16 valid types only</p>
+<p><strong>High performers (Rating=5):</strong>
+- 187 employees qualify as Rating=5 out of 1,975 valid (9.5%)
+- Distributed across all three directorates (Commercial, Technology, HR &amp; Corp Affairs)
+- Average tenure: 4.3 years vs 4.2 years for others — tenure alone is not a differentiator</p>
+<hr />
+<h3 id="12-competency-execution-strongest-signal">1.2 Competency Execution — Strongest Signal</h3>
+<p>All 10 competency pillars show significant positive differences for R5 employees. The top performers score consistently higher across every dimension, not just selectively.</p>
+<table>
+<thead>
+<tr>
+<th>Pillar</th>
+<th>Label</th>
+<th>R5 Mean</th>
+<th>Others Mean</th>
+<th>Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SEA</td>
+<td>Social Empathy &amp; Awareness</td>
+<td>5.03</td>
+<td>2.92</td>
+<td><strong>+2.10</strong></td>
+</tr>
+<tr>
+<td>VCU</td>
+<td>Value Creation for Users</td>
+<td>5.01</td>
+<td>3.17</td>
+<td><strong>+1.83</strong></td>
+</tr>
+<tr>
+<td>CSI</td>
+<td>Commercial Savvy &amp; Impact</td>
+<td>5.04</td>
+<td>3.22</td>
+<td><strong>+1.82</strong></td>
+</tr>
+<tr>
+<td>STO</td>
+<td>Synergy &amp; Team Orientation</td>
+<td>4.96</td>
+<td>3.15</td>
+<td><strong>+1.81</strong></td>
+</tr>
+<tr>
+<td>CEX</td>
+<td>Curiosity &amp; Experimentation</td>
+<td>4.41</td>
+<td>2.96</td>
+<td>+1.44</td>
+</tr>
+<tr>
+<td>QDD</td>
+<td>Quality Delivery Discipline</td>
+<td>4.56</td>
+<td>3.16</td>
+<td>+1.40</td>
+</tr>
+<tr>
+<td>LIE</td>
+<td>Lead, Inspire &amp; Empower</td>
+<td>4.47</td>
+<td>3.18</td>
+<td>+1.29</td>
+</tr>
+<tr>
+<td>GDR</td>
+<td>Growth Drive &amp; Resilience</td>
+<td>4.40</td>
+<td>3.13</td>
+<td>+1.27</td>
+</tr>
+<tr>
+<td>IDS</td>
+<td>Insight &amp; Decision Sharpness</td>
+<td>4.40</td>
+<td>3.14</td>
+<td>+1.26</td>
+</tr>
+<tr>
+<td>FTC</td>
+<td>Forward Thinking &amp; Clarity</td>
+<td>4.39</td>
+<td>3.17</td>
+<td>+1.21</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Insight:</strong> The top 4 differentiators — Social Empathy, Value Creation, Commercial Savvy, and Synergy — point to a success profile built around <strong>people-orientation and business impact</strong>, not just technical execution. R5 employees are not simply harder workers; they operate at the intersection of human connection and commercial results.</p>
+<hr />
+<h3 id="13-work-preferences-papi-key-differentiators">1.3 Work Preferences (PAPI) — Key Differentiators</h3>
+<p>PAPI differences are smaller in magnitude than competencies, but reveal a clear behavioral signature.</p>
+<p><strong>Positive for R5 (higher = more like top performers):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Scale</th>
+<th>Label</th>
+<th>R5</th>
+<th>Others</th>
+<th>Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Papi_P</td>
+<td>Planning</td>
+<td>5.32</td>
+<td>4.96</td>
+<td><strong>+0.35</strong></td>
+</tr>
+<tr>
+<td>Papi_W</td>
+<td>Need to Belong</td>
+<td>5.10</td>
+<td>4.98</td>
+<td>+0.12</td>
+</tr>
+<tr>
+<td>Papi_E</td>
+<td>Empathy</td>
+<td>5.16</td>
+<td>5.06</td>
+<td>+0.10</td>
+</tr>
+<tr>
+<td>Papi_N</td>
+<td>Need for Achievement</td>
+<td>5.18</td>
+<td>5.08</td>
+<td>+0.10</td>
+</tr>
+<tr>
+<td>Papi_F</td>
+<td>Forward Planning</td>
+<td>5.14</td>
+<td>5.05</td>
+<td>+0.09</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Negative for R5 (lower = more like top performers):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Scale</th>
+<th>Label</th>
+<th>R5</th>
+<th>Others</th>
+<th>Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Papi_G</td>
+<td>Leadership</td>
+<td>4.61</td>
+<td>4.97</td>
+<td><strong>−0.35</strong></td>
+</tr>
+<tr>
+<td>Papi_S</td>
+<td>Social Harmony</td>
+<td>4.73</td>
+<td>5.02</td>
+<td>−0.30</td>
+</tr>
+<tr>
+<td>Papi_A</td>
+<td>Attention to Detail</td>
+<td>4.77</td>
+<td>5.06</td>
+<td>−0.29</td>
+</tr>
+<tr>
+<td>Papi_T</td>
+<td>Tenacity</td>
+<td>4.73</td>
+<td>4.98</td>
+<td>−0.25</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Insight:</strong> The counterintuitive finding — R5 employees score <em>lower</em> on the PAPI Leadership (G) scale — reveals that high performers at the current grade level drive results through <strong>collaboration and planning discipline</strong>, not positional authority. They are achievers who belong (Papi_W ↑) and plan (Papi_P ↑), not command-and-control leaders (Papi_G ↓).</p>
+<hr />
+<h3 id="14-psychometric-profile">1.4 Psychometric Profile</h3>
+<table>
+<thead>
+<tr>
+<th>Measure</th>
+<th>R5 Mean</th>
+<th>Others Mean</th>
+<th>Δ</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pauli</td>
+<td>62.7</td>
+<td>59.7</td>
+<td><strong>+3.05</strong></td>
+<td>Mental arithmetic stamina — strongest cognitive differentiator</td>
+</tr>
+<tr>
+<td>GTQ</td>
+<td>28.6</td>
+<td>27.4</td>
+<td><strong>+1.20</strong></td>
+<td>General aptitude — moderate positive signal</td>
+</tr>
+<tr>
+<td>IQ</td>
+<td>109.0</td>
+<td>109.6</td>
+<td>−0.59</td>
+<td>No meaningful difference</td>
+</tr>
+<tr>
+<td>TIKI</td>
+<td>5.5</td>
+<td>5.5</td>
+<td>+0.02</td>
+<td>No meaningful difference</td>
+</tr>
+<tr>
+<td>Faxtor</td>
+<td>58.6</td>
+<td>60.5</td>
+<td>−1.89</td>
+<td>Slightly lower in R5 (internal attention composite)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Insight:</strong> Sustained cognitive stamina (Pauli) and aptitude (GTQ) matter, but raw IQ does not differentiate top performers. This aligns with research showing that IQ predicts entry-level performance while sustained effort and structured reasoning (Pauli, GTQ) predict consistent excellence.</p>
+<hr />
+<h3 id="15-behavioral-strengths">1.5 Behavioral Strengths</h3>
+<p><strong>CliftonStrengths — Top themes in R5 (top-5 per employee):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Theme</th>
+<th>Count</th>
+<th>% of R5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Futuristic</td>
+<td>37</td>
+<td>19.8%</td>
+</tr>
+<tr>
+<td>Restorative</td>
+<td>37</td>
+<td>19.8%</td>
+</tr>
+<tr>
+<td>Intellection</td>
+<td>35</td>
+<td>18.7%</td>
+</tr>
+<tr>
+<td>Self-Assurance</td>
+<td>33</td>
+<td>17.6%</td>
+</tr>
+<tr>
+<td>Activator</td>
+<td>30</td>
+<td>16.0%</td>
+</tr>
+<tr>
+<td>Strategic</td>
+<td>30</td>
+<td>16.0%</td>
+</tr>
+<tr>
+<td>Learner</td>
+<td>29</td>
+<td>15.5%</td>
+</tr>
+<tr>
+<td>Belief</td>
+<td>28</td>
+<td>15.0%</td>
+</tr>
+<tr>
+<td>Positivity</td>
+<td>28</td>
+<td>15.0%</td>
+</tr>
+<tr>
+<td>Analytical</td>
+<td>27</td>
+<td>14.4%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pattern:</strong> R5 employees cluster around <strong>future-oriented thinking</strong> (Futuristic, Strategic, Forward Planning) combined with <strong>self-driven problem solving</strong> (Restorative, Activator, Self-Assurance). This maps directly to the competency profile: visionary problem-solvers who take initiative without waiting for permission.</p>
+<p><strong>DISC Type:</strong>
+No single DISC type dominates R5. The distribution is spread across CD (9.6%), SI (9.1%), CI (8.6%), DI (8.6%), DC (8.6%). High performance is not style-dependent — it's execution-dependent.</p>
+<hr />
+<h3 id="16-contextual-factors">1.6 Contextual Factors</h3>
+<ul>
+<li><strong>Tenure:</strong> R5 avg 4.3 yrs vs 4.2 yrs — virtually identical. Tenure alone does not predict top performance.</li>
+<li><strong>Grade:</strong> R5 employees exist at all three grade levels (III, IV, V), confirming the pattern is not grade-specific.</li>
+<li><strong>Directorate:</strong> R5 representation is proportional across all three directorates.</li>
+</ul>
+<hr />
+<h3 id="17-success-formula">1.7 Success Formula</h3>
+<p>Based on the above analysis, the weighted Success Formula is:</p>
+<pre><code>Final Match Rate =
+    0.30 × Cognitive Ability Score
+  + 0.20 × Work Preferences Score
+  + 0.25 × Competency Execution Score
+  + 0.15 × Behavioral Strengths Score
+  + 0.10 × Contextual Fit Score
+</code></pre>
+<p><strong>Weight Rationale:</strong></p>
+<table>
+<thead>
+<tr>
+<th>TGV</th>
+<th>Weight</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cognitive Ability</strong></td>
+<td>0.30</td>
+<td>Pauli (+3.05) and GTQ (+1.20) show meaningful gaps; cognitive capacity is the most objectively measurable predictor</td>
+</tr>
+<tr>
+<td><strong>Competency Execution</strong></td>
+<td>0.25</td>
+<td>All 10 pillars differ significantly (+1.2 to +2.1); competencies reflect demonstrated behavior in role, not just potential</td>
+</tr>
+<tr>
+<td><strong>Work Preferences</strong></td>
+<td>0.20</td>
+<td>Planning and achievement orientation create the daily behaviors that translate potential into results</td>
+</tr>
+<tr>
+<td><strong>Behavioral Strengths</strong></td>
+<td>0.15</td>
+<td>CliftonStrengths show a clear future-oriented, self-driven theme cluster; DISC diversity means categorical match is secondary</td>
+</tr>
+<tr>
+<td><strong>Contextual Fit</strong></td>
+<td>0.10</td>
+<td>Tenure and grade show minimal differentiation — included for organizational context, not predictive power</td>
+</tr>
+</tbody>
+</table>
+<p>Within each TGV, all Talent Variables (TVs) carry equal weight unless overridden via <code>weights_config</code>.</p>
+<hr />
+<h2 id="section-2-sql-logic-algorithm">Section 2 — SQL Logic &amp; Algorithm</h2>
+<h3 id="21-approach">2.1 Approach</h3>
+<p>The matching algorithm is implemented as a parameterized SQL query using 17 modular CTEs. It is designed to run entirely on-the-fly given a <code>job_vacancy_id</code> — no pre-computation, no hardcoded employee IDs.</p>
+<p><strong>Script:</strong> <code>sql/matching_algorithm.sql</code></p>
+<h3 id="22-cte-architecture">2.2 CTE Architecture</h3>
+<pre><code>CTE 1:  benchmark_employees      → Unpack selected benchmark IDs from talent_benchmarks
+CTE 2:  benchmark_psych          → Psychometric scores for benchmarks
+CTE 3:  baseline_psych           → PERCENTILE_CONT(0.5) medians per psych TV
+CTE 4:  benchmark_papi           → All 20 PAPI scales pivoted wide for benchmarks
+CTE 5:  baseline_papi            → Median per PAPI scale across benchmarks
+CTE 6:  baseline_competency      → Median per pillar (latest year) for benchmarks
+CTE 7:  benchmark_disc_mode      → MODE() DISC type across benchmarks (categorical baseline)
+CTE 8:  benchmark_mbti_mode      → MODE() valid MBTI type across benchmarks
+CTE 9:  benchmark_strength_pool  → Pooled unique top-5 CliftonStrengths themes
+CTE 10: candidate_info           → All employees + org context (grade, role, directorate)
+CTE 11: candidate_psych          → Psychometric scores per candidate
+CTE 12: candidate_papi           → All 20 PAPI scales pivoted wide per candidate
+CTE 13: candidate_strengths_overlap → Top-5 theme overlap count per candidate
+CTE 14: tv_match_rates_long      → Per-employee × per-TV match rate (long format)
+CTE 15: tgv_match_rates          → AVG of TV match rates within each TGV
+CTE 16: tgv_weights              → Hardcoded TGV weights (overridable)
+CTE 17: final_match_rates        → Weighted average of TGV rates = Final Match Rate
+</code></pre>
+<h3 id="23-scoring-formulas">2.3 Scoring Formulas</h3>
+<p><strong>Numeric TV (higher is better):</strong></p>
+<pre><code class="language-sql">LEAST(100, ROUND(user_score / NULLIF(baseline_score, 0) * 100, 2))
+</code></pre>
+<p><strong>Numeric TV (lower is better — inverse scales Papi_Z, Papi_K):</strong></p>
+<pre><code class="language-sql">LEAST(100, GREATEST(0, ROUND(
+    (2 * baseline_score - user_score) / NULLIF(baseline_score, 0) * 100, 2
+)))
+</code></pre>
+<p><strong>Categorical TV (DISC, MBTI — exact match):</strong></p>
+<pre><code class="language-sql">CASE WHEN user_val = baseline_val THEN 100.0 ELSE 0.0 END
+</code></pre>
+<p>→ NULL when either value is missing (no penalty for untested data)</p>
+<p><strong>CliftonStrengths overlap:</strong></p>
+<pre><code class="language-sql">ROUND(overlap_count::NUMERIC / 5 * 100, 2)
+-- overlap_count = count of candidate's top-5 themes in benchmark pool
+</code></pre>
+<p><strong>TGV match rate:</strong></p>
+<pre><code class="language-sql">AVG(tv_match_rate)  -- NULLs excluded (missing data is skipped, not penalized)
+</code></pre>
+<p><strong>Final match rate:</strong></p>
+<pre><code class="language-sql">SUM(tgv_match_rate * weight) / SUM(weight)
+-- weights: Cognitive 0.30 + Competency 0.25 + Work Prefs 0.20 +
+--          Behavioral 0.15 + Contextual 0.10 = 1.00
+</code></pre>
+<h3 id="24-sample-output-vacancy-with-3-benchmark-employees">2.4 Sample Output (vacancy with 3 benchmark employees)</h3>
+<p>The query returns one row per employee × TV combination. Summary view (per employee):</p>
+<table>
+<thead>
+<tr>
+<th>employee_id</th>
+<th>fullname</th>
+<th>final_match_rate</th>
+<th>Cognitive</th>
+<th>Competency</th>
+<th>Work Prefs</th>
+<th>Behavioral</th>
+<th>Contextual</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EMP101226</td>
+<td>Yoga Erlangga Mahendra</td>
+<td>92.52%</td>
+<td>92.2%</td>
+<td>98.0%</td>
+<td>86.8%</td>
+<td>86.7%</td>
+<td>100.0%</td>
+</tr>
+<tr>
+<td>EMP101353</td>
+<td>Prasetyo Halim</td>
+<td>89.85%</td>
+<td>88.1%</td>
+<td>96.5%</td>
+<td>84.2%</td>
+<td>80.0%</td>
+<td>100.0%</td>
+</tr>
+<tr>
+<td>EMP101428</td>
+<td>Umar Wibowo</td>
+<td>89.05%</td>
+<td>90.3%</td>
+<td>94.2%</td>
+<td>83.1%</td>
+<td>80.0%</td>
+<td>95.0%</td>
+</tr>
+</tbody>
+</table>
+<p>Full output schema:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>employee_id</td>
+<td>Candidate ID</td>
+</tr>
+<tr>
+<td>fullname</td>
+<td>Full name</td>
+</tr>
+<tr>
+<td>directorate</td>
+<td>Organizational unit</td>
+</tr>
+<tr>
+<td>role</td>
+<td>Position title</td>
+</tr>
+<tr>
+<td>grade</td>
+<td>Grade level</td>
+</tr>
+<tr>
+<td>tgv_name</td>
+<td>Talent Group Variable (e.g., Cognitive Ability)</td>
+</tr>
+<tr>
+<td>tv_name</td>
+<td>Talent Variable (e.g., IQ Score, PAPI Planning)</td>
+</tr>
+<tr>
+<td>baseline_score</td>
+<td>Benchmark median for this TV</td>
+</tr>
+<tr>
+<td>user_score</td>
+<td>Candidate score for this TV</td>
+</tr>
+<tr>
+<td>tv_match_rate</td>
+<td>Match % for this TV (0–100)</td>
+</tr>
+<tr>
+<td>tgv_match_rate</td>
+<td>Avg/weighted match within TGV</td>
+</tr>
+<tr>
+<td>final_match_rate</td>
+<td>Weighted overall match %</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="section-3-ai-app-dashboard">Section 3 — AI App &amp; Dashboard</h2>
+<h3 id="31-live-deployment">3.1 Live Deployment</h3>
+<p><strong>URL:</strong> https://ninditya-talent-match-intelligence.streamlit.app/</p>
+<p><strong>Stack:</strong> Streamlit 1.40 · Python 3.11 · Supabase (Postgres) · OpenRouter (MiniMax M2.5 free) · Plotly 5.24</p>
+<h3 id="32-runtime-inputs">3.2 Runtime Inputs</h3>
+<p>When a manager submits the form, the app:
+1. Writes a new <code>talent_benchmarks</code> row with a unique <code>JV-XXXXXXXX</code> vacancy ID
+2. Recomputes baselines dynamically from the selected benchmark employees
+3. Runs the Python matching algorithm against all 2,010 employees
+4. Calls OpenRouter LLM to generate a structured job profile
+5. Renders all visualizations and ranked results</p>
+<p><strong>Form fields:</strong>
+- Role Name (text)
+- Job Level (Entry / Junior / Middle / Senior / Manager / Director)
+- Role Purpose (1–2 sentences)
+- Benchmark Employees (multiselect, max 3, Rating=5 only)</p>
+<h3 id="33-ai-generated-job-profile">3.3 AI-Generated Job Profile</h3>
+<p>The app calls OpenRouter (MiniMax M2.5 free tier) with a structured prompt that includes:
+- Role name, level, and purpose
+- TGV benchmark averages (numeric context for the LLM)
+- Top CliftonStrengths themes from the benchmark pool</p>
+<p>The LLM returns structured JSON:</p>
+<pre><code class="language-json">{
+  &quot;job_requirements&quot;: [&quot;6+ years experience...&quot;, &quot;Strong analytical skills...&quot;],
+  &quot;job_description&quot;: &quot;2–3 sentence narrative...&quot;,
+  &quot;key_competencies&quot;: [&quot;Strategic Thinking&quot;, &quot;Data-Driven Decision Making&quot;, ...]
+}
+</code></pre>
+<h3 id="34-dashboard-visualizations">3.4 Dashboard Visualizations</h3>
+<p><strong>Tab 1 — Job Profile:</strong> AI-generated requirements, description, key competencies, benchmark employee list.</p>
+<p><strong>Tab 2 — Ranked Talent:</strong> Full 2,010-employee ranked table with search and minimum match % filter. Color-gradient on final_match_rate column.</p>
+<p><strong>Tab 3 — Dashboard:</strong>
+- Match rate distribution histogram (all 2,010 candidates)
+- Top-15 candidates horizontal bar chart
+- TGV heatmap for top-20 candidates (employee × TGV grid)</p>
+<p><strong>Tab 4 — Candidate Detail:</strong>
+- TGV radar chart (candidate vs benchmark = 100%)
+- TV strengths &amp; gaps horizontal bar (all TVs sorted, 80% threshold line)
+- Full TV-level detail table with color gradient</p>
+<h3 id="35-example-flow">3.5 Example Flow</h3>
+<pre><code>Input:  Role = &quot;Head of Digital Marketing&quot;
+        Level = Manager
+        Purpose = &quot;Drive brand growth and digital acquisition&quot;
+        Benchmarks = [EMP100010, EMP100011, EMP100012]
+
+Output: Vacancy ID = JV-D7F4DF9A
+        Top match = Yoga Erlangga Mahendra (92.52%)
+        AI profile generated in ~8 seconds
+        Full ranked table of 2,010 employees
+</code></pre>
+<hr />
+<h2 id="section-4-conclusion">Section 4 — Conclusion</h2>
+<h3 id="what-worked">What Worked</h3>
+<ul>
+<li>The <strong>competency execution signal</strong> is overwhelmingly the strongest predictor of Rating=5 (all 10 pillars Δ &gt; +1.2). Any company seeking to replicate this approach should prioritize behavioral competency assessments over psychometric scores.</li>
+<li><strong>Pauli (mental arithmetic stamina)</strong> was the best psychometric differentiator — not IQ — which suggests cognitive endurance matters more than peak intelligence for sustained high performance.</li>
+<li>The <strong>counterintuitive PAPI finding</strong> (R5 scores lower on Leadership/G) adds real analytical value: it warns against promoting people based on leadership style alone rather than execution results.</li>
+</ul>
+<h3 id="challenges">Challenges</h3>
+<ul>
+<li><strong>ERD vs. reality mismatch:</strong> The case study brief mentioned GTQ1–GTQ5 and Tiki1–Tiki4 as separate columns, but the actual database stores single composite columns (<code>gtq</code>, <code>tiki</code>). Discovering and adapting to this required iterating through the live schema rather than relying on documentation.</li>
+<li><strong>Model availability:</strong> OpenRouter free-tier models deprecated without notice. Required live API querying to identify a working model (<code>minimax/minimax-m2.5:free</code>).</li>
+<li><strong>Pagination:</strong> Supabase PostgREST caps at 1,000 rows per request. A custom paginated <code>fetch_table()</code> function was built to handle the full 2,010-employee dataset.</li>
+</ul>
+<h3 id="ideas-for-improvement">Ideas for Improvement</h3>
+<ol>
+<li><strong>Longitudinal weighting:</strong> Use 5-year competency trend (slope) instead of single latest-year score — an employee improving rapidly may be a better bet than one plateauing at a high level.</li>
+<li><strong>Role-specific Success Formulas:</strong> Train separate weight sets per job family (e.g., commercial roles weight Papi_P higher; technical roles weight GTQ and Cognitive higher).</li>
+<li><strong>Ensemble baseline:</strong> Replace median with a weighted blend of the 3 benchmark employees based on their performance trajectory, not just latest rating.</li>
+<li><strong>Interpretable gap analysis:</strong> Auto-generate a personalized development plan for each candidate highlighting their top 3 gaps and suggested interventions.</li>
+<li><strong>Real-time retraining:</strong> As new performance ratings arrive annually, automatically re-run the EDA and update the Success Formula weights.</li>
+</ol>
+<hr />
+<p><em>Analysis conducted on Supabase (Postgres) · Python 3.11 · Pandas · Plotly · Streamlit</em>
+<em>Repository: https://github.com/ninditya/talent-match-intelligence</em>
+<em>App: https://ninditya-talent-match-intelligence.streamlit.app/</em></p></body>
+</html>
