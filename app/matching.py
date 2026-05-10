@@ -8,16 +8,32 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 _sb = None
 
+def _get_secret(key: str) -> str:
+    """Read from st.secrets (Streamlit Cloud) or os.environ (local)."""
+    try:
+        import streamlit as st
+        return st.secrets[key]
+    except Exception:
+        return os.environ[key]
+
 def _client():
     global _sb
     if _sb is None:
-        _sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
+        _sb = create_client(_get_secret("SUPABASE_URL"), _get_secret("SUPABASE_KEY"))
     return _sb
 
 
-def fetch_table(table: str, cols: str = "*", limit: int = 50000) -> pd.DataFrame:
-    r = _client().table(table).select(cols).limit(limit).execute()
-    return pd.DataFrame(r.data)
+def fetch_table(table: str, cols: str = "*", page_size: int = 1000) -> pd.DataFrame:
+    """Paginate through all rows — Supabase PostgREST caps at 1,000/request."""
+    all_rows, offset = [], 0
+    while True:
+        r = _client().table(table).select(cols).range(offset, offset + page_size - 1).execute()
+        batch = r.data
+        all_rows.extend(batch)
+        if len(batch) < page_size:
+            break
+        offset += page_size
+    return pd.DataFrame(all_rows)
 
 
 def get_all_employees() -> pd.DataFrame:

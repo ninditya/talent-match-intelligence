@@ -82,5 +82,5 @@ Run the DDL in `sql/matching_algorithm.sql` (lines 1–45) once to create:
 | Database | Supabase (Postgres) |
 | Analysis | Python, Pandas, Plotly |
 | App | Streamlit |
-| AI | OpenRouter (Llama 3.1 free tier) |
+| AI | OpenRouter (MiniMax M2.5 free tier) |
 | Version Control | GitHub |

@@ -3,11 +3,16 @@ import json
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_MODEL   = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct:free")
-OPENROUTER_URL     = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+def _get_secret(key: str, default: str = "") -> str:
+    try:
+        import streamlit as st
+        return st.secrets.get(key, os.getenv(key, default))
+    except Exception:
+        return os.getenv(key, default)
 
 
 def generate_job_profile(
@@ -45,14 +50,14 @@ Be specific, data-driven, and business-ready. No markdown, just raw JSON.
 """
 
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {_get_secret('OPENROUTER_API_KEY')}",
         "Content-Type":  "application/json",
         "HTTP-Referer":  "https://talent-match-intelligence.streamlit.app",
         "X-Title":       "Talent Match Intelligence",
     }
 
     payload = {
-        "model": OPENROUTER_MODEL,
+        "model": _get_secret("OPENROUTER_MODEL", "minimax/minimax-m2.5:free"),
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.4,
     }
