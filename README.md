@@ -68,6 +68,10 @@ Run the DDL in `sql/matching_algorithm.sql` (lines 1–45) once to create:
 - `talent_benchmarks` — stores vacancy definitions
 - `tv_definitions` — maps Talent Variables to data sources
 
+## Live App
+
+**[https://ninditya-talent-match-intelligence.streamlit.app/](https://ninditya-talent-match-intelligence.streamlit.app/)**
+
 ## Deployment (Streamlit Cloud)
 
 1. Push this repo to GitHub
