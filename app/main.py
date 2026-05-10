@@ -147,10 +147,17 @@ with tab2:
         )
         ranked.index += 1
 
-        search = st.text_input("Search by name, role, or directorate")
+        col_search, col_min = st.columns([3, 1])
+        with col_search:
+            search = st.text_input("Search by name, role, or directorate")
+        with col_min:
+            min_rate = st.number_input("Min match %", min_value=0, max_value=100, value=0, step=5)
+
         if search:
             mask = ranked.apply(lambda r: search.lower() in r.to_string().lower(), axis=1)
             ranked = ranked[mask]
+        if min_rate > 0:
+            ranked = ranked[ranked["final_match_rate"] >= min_rate]
 
         st.dataframe(
             ranked.style.background_gradient(subset=["final_match_rate"], cmap="Blues"),
