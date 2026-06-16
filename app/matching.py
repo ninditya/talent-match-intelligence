@@ -9,12 +9,18 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 _sb = None
 
 def _get_secret(key: str) -> str:
-    """Read from st.secrets (Streamlit Cloud) or os.environ (local)."""
     try:
         import streamlit as st
-        return st.secrets[key]
+        if key in st.secrets:
+            return st.secrets[key]
     except Exception:
-        return os.environ[key]
+        pass
+    val = os.environ.get(key)
+    if not val:
+        raise RuntimeError(
+            f"Missing secret '{key}'. Set it in Streamlit Cloud Secrets or your .env file."
+        )
+    return val
 
 def _client():
     global _sb

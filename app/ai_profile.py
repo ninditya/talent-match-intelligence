@@ -57,7 +57,7 @@ Be specific, data-driven, and business-ready. No markdown, just raw JSON.
     }
 
     payload = {
-        "model": _get_secret("OPENROUTER_MODEL", "minimax/minimax-m2.5:free"),
+        "model": _get_secret("OPENROUTER_MODEL", "meta-llama/llama-3.2-3b-instruct:free"),
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.4,
     }

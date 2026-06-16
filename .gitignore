@@ -1,5 +1,6 @@
 # Environment
 .env
+.env.*
 *.env
 
 # Python
@@ -28,6 +29,8 @@ Thumbs.db
 
 # Data (raw CSVs with PII)
 data/raw/
+CaseStudyBrief-DataAnalyst2025rev 1.1(2).pdf
+Study Case DA (1).xlsx
 
 # IDE
 .vscode/
