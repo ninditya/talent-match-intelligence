@@ -7,6 +7,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
+
 def _get_secret(key: str, default: str = "") -> str:
     try:
         import streamlit as st
@@ -22,12 +23,7 @@ def generate_job_profile(
     top_tgvs: dict,
     top_strengths: list[str],
 ) -> dict:
-    """
-    Call an LLM via OpenRouter to generate a structured job profile.
-    Returns: {job_requirements, job_description, key_competencies}
-    """
-    prompt = f"""
-You are an expert HR analyst. Generate a structured job profile based on the following talent intelligence data.
+    prompt = f"""You are an expert HR analyst. Generate a structured job profile based on the following talent intelligence data.
 
 Role: {role_name}
 Level: {job_level}
@@ -41,13 +37,12 @@ Common CliftonStrengths themes among top performers:
 
 Return a JSON object with exactly these keys:
 {{
-  "job_requirements": ["bullet 1", "bullet 2", ...],   // 6-8 specific requirements
+  "job_requirements": ["bullet 1", "bullet 2", ...],
   "job_description": "2-3 sentence narrative description",
-  "key_competencies": ["competency 1", "competency 2", ...]  // 5-7 key competencies
+  "key_competencies": ["competency 1", "competency 2", ...]
 }}
 
-Be specific, data-driven, and business-ready. No markdown, just raw JSON.
-"""
+Be specific, data-driven, and business-ready. Return only raw JSON, no markdown."""
 
     headers = {
         "Authorization": f"Bearer {_get_secret('OPENROUTER_API_KEY')}",
@@ -57,7 +52,7 @@ Be specific, data-driven, and business-ready. No markdown, just raw JSON.
     }
 
     payload = {
-        "model": _get_secret("OPENROUTER_MODEL", "google/gemma-4-31b-it:free"),
+        "model": _get_secret("OPENROUTER_MODEL", "minimax/minimax-m2.5:free"),
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.4,
     }
@@ -67,7 +62,6 @@ Be specific, data-driven, and business-ready. No markdown, just raw JSON.
         resp.raise_for_status()
         content = resp.json()["choices"][0]["message"]["content"].strip()
 
-        # Strip markdown code fences if present
         if content.startswith("```"):
             content = content.split("```")[1]
             if content.startswith("json"):
