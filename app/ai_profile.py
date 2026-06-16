@@ -57,7 +57,7 @@ Be specific, data-driven, and business-ready. No markdown, just raw JSON.
     }
 
     payload = {
-        "model": _get_secret("OPENROUTER_MODEL", "meta-llama/llama-3.2-3b-instruct:free"),
+        "model": _get_secret("OPENROUTER_MODEL", "google/gemma-4-31b-it:free"),
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.4,
     }
